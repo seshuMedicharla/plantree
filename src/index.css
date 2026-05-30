@@ -1,0 +1,15 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica,
+    Arial, Noto Sans, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background:
+    radial-gradient(circle at 15% -10%, #dcfce7 0%, transparent 45%),
+    radial-gradient(circle at 85% 115%, #f1f5f9 0%, transparent 55%),
+    linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  min-height: 100vh;
+}
