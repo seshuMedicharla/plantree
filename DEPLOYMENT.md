@@ -24,10 +24,11 @@ Use blank `VITE_API_BASE_URL` when the same server hosts both API and frontend.
 ```bash
 npm ci
 npm run predeploy
+npm run db:indexes
 npm start
 ```
 
-`predeploy` builds the React app, compiles the API, and creates MongoDB indexes.
+`predeploy` builds the React app and compiles the API. Run `db:indexes` separately after your MongoDB credentials are correct.
 
 ## Render Free Web Service
 
@@ -41,6 +42,12 @@ Use this start command:
 
 ```bash
 npm start
+```
+
+After the first successful deploy, run this as a Render one-off job only after `MONGODB_URI` is working:
+
+```bash
+npm run db:indexes
 ```
 
 ## Important Before Public Launch
