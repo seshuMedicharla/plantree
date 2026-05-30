@@ -29,6 +29,20 @@ npm start
 
 `predeploy` builds the React app, compiles the API, and creates MongoDB indexes.
 
+## Render Free Web Service
+
+If `NODE_ENV=production` is set in Render, use this build command so Render still installs TypeScript, Vite, and type definitions needed during build:
+
+```bash
+npm ci --include=dev && npm run predeploy
+```
+
+Use this start command:
+
+```bash
+npm start
+```
+
 ## Important Before Public Launch
 
 - Rotate MongoDB Atlas password because credentials were used during local setup.
