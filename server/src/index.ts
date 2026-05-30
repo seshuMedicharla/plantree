@@ -19,10 +19,16 @@ const clientIndexPath = path.join(clientDistDir, "index.html");
 app.disable("x-powered-by");
 app.set("trust proxy", 1);
 app.use(securityHeaders);
-app.use(
+app.use((request, response, next) => {
   cors({
     origin(origin, callback) {
-      if (!origin || config.corsOrigins.includes(origin)) {
+      const requestOrigin = `${request.protocol}://${request.get("host")}`;
+
+      if (
+        !origin ||
+        origin === requestOrigin ||
+        config.corsOrigins.includes(origin)
+      ) {
         callback(null, true);
         return;
       }
@@ -30,8 +36,8 @@ app.use(
       callback(new Error("CORS origin is not allowed"));
     },
     credentials: false,
-  }),
-);
+  })(request, response, next);
+});
 app.use(
   createRateLimit({
     windowMs: 15 * 60 * 1000,
