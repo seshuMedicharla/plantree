@@ -118,6 +118,10 @@ app.use(
 
     if (
       message === "MONGODB_URI is required" ||
+      message.includes("bad auth") ||
+      message.includes("Authentication failed") ||
+      message.includes("authentication failed") ||
+      message.includes("AtlasError") ||
       message.includes("SSL routines") ||
       message.includes("MongoServerSelectionError") ||
       message.includes("MongoNetworkError")
@@ -126,6 +130,10 @@ app.use(
         message:
           message === "MONGODB_URI is required"
             ? message
+            : message.includes("bad auth") ||
+                message.includes("Authentication failed") ||
+                message.includes("authentication failed")
+              ? "Database authentication failed. Check MONGODB_URI username and password in Render."
             : "Database connection failed. Check MongoDB Atlas network access and try again.",
       });
       return;
