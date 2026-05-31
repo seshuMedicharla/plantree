@@ -122,9 +122,15 @@ app.use(
       message.includes("Authentication failed") ||
       message.includes("authentication failed") ||
       message.includes("AtlasError") ||
+      message.includes("MongoParseError") ||
+      message.includes("Invalid scheme") ||
+      message.includes("querySrv") ||
+      message.includes("ENOTFOUND") ||
+      message.includes("timed out") ||
       message.includes("SSL routines") ||
       message.includes("MongoServerSelectionError") ||
-      message.includes("MongoNetworkError")
+      message.includes("MongoNetworkError") ||
+      (error instanceof Error && error.name.startsWith("Mongo"))
     ) {
       response.status(503).json({
         message:
@@ -134,6 +140,9 @@ app.use(
                 message.includes("Authentication failed") ||
                 message.includes("authentication failed")
               ? "Database authentication failed. Check MONGODB_URI username and password in Render."
+              : message.includes("MongoParseError") ||
+                  message.includes("Invalid scheme")
+                ? "Database connection string is invalid. Check MONGODB_URI in Render."
             : "Database connection failed. Check MongoDB Atlas network access and try again.",
       });
       return;
