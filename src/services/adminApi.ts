@@ -50,3 +50,10 @@ export function fetchAdminUsers() {
 export function updateAdminUserRole(userId: string, role: 'USER' | 'ADMIN') {
   return apiPost<{ user: AdminUser }>(`/admin/users/${userId}/role`, { role })
 }
+
+export function resetAdminUserPassword(identifier: string, password: string) {
+  return apiPost<{ message: string; user: AdminUser }>('/admin/users/reset-password', {
+    identifier,
+    password,
+  })
+}

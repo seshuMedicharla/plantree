@@ -1,4 +1,4 @@
-import { ShieldCheck, UserCog } from 'lucide-react'
+import { KeyRound, ShieldCheck, UserCog } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import Button from '../components/Button'
 import Card from '../components/Card'
@@ -7,6 +7,7 @@ import {
   fetchAdminPlantings,
   fetchAdminUsers,
   rejectAdminPlanting,
+  resetAdminUserPassword,
   updateAdminUserRole,
   verifyAdminPlanting,
   type AdminPlanting,
@@ -18,6 +19,10 @@ export default function Admin() {
   const [users, setUsers] = useState<AdminUser[]>([])
   const [rejectReason, setRejectReason] = useState('')
   const [selectedPlantingId, setSelectedPlantingId] = useState<string | null>(null)
+  const [passwordResetUserId, setPasswordResetUserId] = useState<string | null>(null)
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [resettingPassword, setResettingPassword] = useState(false)
   const [message, setMessage] = useState<string | undefined>()
   const [error, setError] = useState<string | undefined>()
   const [loading, setLoading] = useState(true)
@@ -70,6 +75,52 @@ export default function Admin() {
     await updateAdminUserRole(userId, role)
     setMessage('User role updated.')
     await loadAdminData()
+  }
+
+  const openPasswordReset = (userId: string) => {
+    setPasswordResetUserId((current) => (current === userId ? null : userId))
+    setNewPassword('')
+    setConfirmPassword('')
+    setError(undefined)
+    setMessage(undefined)
+  }
+
+  const handlePasswordReset = async (user: AdminUser) => {
+    const identifier = user.username ?? user.email
+
+    if (!identifier) {
+      setError('This user does not have username or email.')
+      return
+    }
+
+    if (
+      newPassword.length < 8 ||
+      !/[A-Za-z]/.test(newPassword) ||
+      !/[0-9]/.test(newPassword)
+    ) {
+      setError('Password must be at least 8 characters and include a letter and number.')
+      return
+    }
+
+    if (newPassword !== confirmPassword) {
+      setError('Passwords do not match.')
+      return
+    }
+
+    setResettingPassword(true)
+    setError(undefined)
+
+    try {
+      await resetAdminUserPassword(identifier, newPassword)
+      setMessage(`Password updated for ${user.username ?? user.email}.`)
+      setPasswordResetUserId(null)
+      setNewPassword('')
+      setConfirmPassword('')
+    } catch (resetError) {
+      setError(resetError instanceof Error ? resetError.message : 'Password reset failed.')
+    } finally {
+      setResettingPassword(false)
+    }
   }
 
   return (
@@ -151,18 +202,69 @@ export default function Admin() {
 
         <div className="mt-3 space-y-2">
           {users.map((user) => (
-            <div key={user.id} className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-3">
-              <div>
-                <p className="text-sm font-semibold text-slate-900">{user.name}</p>
-                <p className="text-xs text-slate-500">{user.username ?? 'No username'}</p>
-                {user.email ? <p className="text-xs text-slate-500">{user.email}</p> : null}
+            <div key={user.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-slate-900">{user.name}</p>
+                  <p className="text-xs text-slate-500">{user.username ?? 'No username'}</p>
+                  {user.email ? <p className="truncate text-xs text-slate-500">{user.email}</p> : null}
+                </div>
+
+                <div className="flex shrink-0 items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => openPasswordReset(user.id)}
+                    className="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:bg-slate-50"
+                    aria-label={`Reset password for ${user.username ?? user.email ?? user.name}`}
+                  >
+                    <KeyRound size={18} />
+                  </button>
+                  <Button
+                    className="w-20 px-2"
+                    variant={user.role === 'ADMIN' ? 'secondary' : 'ghost'}
+                    onClick={() => void handleRoleChange(user.id, user.role === 'ADMIN' ? 'USER' : 'ADMIN')}
+                  >
+                    {user.role}
+                  </Button>
+                </div>
               </div>
-              <Button
-                variant={user.role === 'ADMIN' ? 'secondary' : 'ghost'}
-                onClick={() => void handleRoleChange(user.id, user.role === 'ADMIN' ? 'USER' : 'ADMIN')}
-              >
-                {user.role}
-              </Button>
+
+              {passwordResetUserId === user.id ? (
+                <div className="mt-3 space-y-2 rounded-2xl border border-emerald-100 bg-white p-3">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">
+                    Admin password reset
+                  </p>
+                  <Input
+                    type="password"
+                    autoComplete="new-password"
+                    value={newPassword}
+                    onChange={(event) => setNewPassword(event.target.value)}
+                    placeholder="New password"
+                  />
+                  <Input
+                    type="password"
+                    autoComplete="new-password"
+                    value={confirmPassword}
+                    onChange={(event) => setConfirmPassword(event.target.value)}
+                    placeholder="Confirm new password"
+                  />
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button
+                      onClick={() => void handlePasswordReset(user)}
+                      disabled={resettingPassword}
+                    >
+                      {resettingPassword ? 'Saving...' : 'Save Password'}
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      onClick={() => openPasswordReset(user.id)}
+                      disabled={resettingPassword}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              ) : null}
             </div>
           ))}
         </div>
