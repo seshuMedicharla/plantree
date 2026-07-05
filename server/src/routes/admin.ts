@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto'
 import { Router } from 'express'
 import { z } from 'zod'
 import { requireAdmin } from '../auth/access.js'
+import { hashPassword } from '../auth/password.js'
 import { collection } from '../mongo.js'
 import type {
   NotificationDocument,
@@ -14,6 +15,15 @@ const router = Router()
 
 const updateRoleSchema = z.object({
   role: z.enum(['USER', 'ADMIN']),
+})
+const resetPasswordSchema = z.object({
+  identifier: z.string().trim().min(3).max(120),
+  password: z
+    .string()
+    .min(8)
+    .max(128)
+    .regex(/[A-Za-z]/, 'Password must include at least one letter')
+    .regex(/[0-9]/, 'Password must include at least one number'),
 })
 
 const rejectPlantingSchema = z.object({
@@ -210,6 +220,48 @@ router.post('/admin/users/:id/role', async (request, response, next) => {
     }
 
     response.json({
+      user: {
+        id: user._id,
+        name: user.name,
+        username: user.username,
+        email: user.email ?? null,
+        role: user.role,
+        createdAt: user.createdAt.toISOString(),
+      },
+    })
+  } catch (error) {
+    next(error)
+  }
+})
+
+router.post('/admin/users/reset-password', async (request, response, next) => {
+  try {
+    const admin = requireAdmin(request, response)
+    if (!admin) return
+
+    const payload = resetPasswordSchema.parse(request.body)
+    const identifier = payload.identifier.trim().toLowerCase()
+    const users = await collection<UserDocument>('users')
+    const user = await users.findOneAndUpdate(
+      {
+        $or: [{ username: identifier }, { email: identifier }],
+      },
+      {
+        $set: {
+          passwordHash: hashPassword(payload.password),
+          updatedAt: new Date(),
+        },
+      },
+      { returnDocument: 'after' }
+    )
+
+    if (!user) {
+      response.status(404).json({ message: 'User not found' })
+      return
+    }
+
+    response.json({
+      message: 'Password reset successfully',
       user: {
         id: user._id,
         name: user.name,
