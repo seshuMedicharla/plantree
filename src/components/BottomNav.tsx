@@ -1,5 +1,6 @@
+import { useRef } from 'react'
 import { Clapperboard, Home, MessageCircle, Plus, ShieldCheck, User } from 'lucide-react'
-import { NavLink } from 'react-router-dom'
+import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { getAuthUser } from '../services/http'
 
 type NavItem = {
@@ -18,6 +19,9 @@ const navItems: NavItem[] = [
 ]
 
 export default function BottomNav() {
+  const navigate = useNavigate()
+  const location = useLocation()
+  const postCameraInputRef = useRef<HTMLInputElement | null>(null)
   const user = getAuthUser()
   const visibleItems =
     user?.role === 'ADMIN'
@@ -37,22 +41,42 @@ export default function BottomNav() {
           const Icon = item.icon
 
           if (item.isPost) {
+            const isActive = location.pathname === item.to
+
             return (
               <li key={item.to} className="flex items-center justify-center">
-                <NavLink to={item.to} end className="flex min-h-11 min-w-11 flex-col items-center justify-center gap-1">
-                  {({ isActive }) => (
-                    <>
-                      <span
-                        className={`flex h-12 w-12 items-center justify-center rounded-full bg-emerald-600 text-white shadow-lg transition-all duration-200 ${
-                          isActive ? 'scale-105' : 'hover:scale-105 active:scale-105'
-                        }`}
-                      >
-                        <Icon size={20} />
-                      </span>
-                      <span className="text-xs font-medium text-slate-600">Post</span>
-                    </>
-                  )}
-                </NavLink>
+                <input
+                  ref={postCameraInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  onChange={(event) => {
+                    const photo = event.target.files?.[0]
+                    event.target.value = ''
+
+                    if (photo) {
+                      navigate(item.to, { state: { initialPhoto: photo } })
+                      return
+                    }
+
+                    navigate(item.to)
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => postCameraInputRef.current?.click()}
+                  className="flex min-h-11 min-w-11 flex-col items-center justify-center gap-1"
+                >
+                  <span
+                    className={`flex h-12 w-12 items-center justify-center rounded-full bg-emerald-600 text-white shadow-lg transition-all duration-200 ${
+                      isActive ? 'scale-105' : 'hover:scale-105 active:scale-105'
+                    }`}
+                  >
+                    <Icon size={20} />
+                  </span>
+                  <span className="text-xs font-medium text-slate-600">Post</span>
+                </button>
               </li>
             )
           }

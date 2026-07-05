@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { CheckCircle2, MapPin, PenLine, Trees } from 'lucide-react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import Button from '../components/Button'
 import Card from '../components/Card'
 import Input from '../components/Input'
@@ -18,6 +19,9 @@ type LocationState = {
 }
 
 type AvailabilityState = 'unknown' | 'available' | 'blocked'
+type PostRouteState = {
+  initialPhoto?: File
+}
 
 function fileToDataUrl(file: File) {
   return new Promise<string>((resolve, reject) => {
@@ -29,6 +33,13 @@ function fileToDataUrl(file: File) {
 }
 
 export default function Post() {
+  const navigate = useNavigate()
+  const routeLocation = useLocation()
+  const initialPhotoRef = useRef<File | undefined>(
+    (routeLocation.state as PostRouteState | null)?.initialPhoto instanceof File
+      ? (routeLocation.state as PostRouteState).initialPhoto
+      : undefined
+  )
   const [treeCount, setTreeCount] = useState('1')
   const [species, setSpecies] = useState('')
   const [caption, setCaption] = useState('')
@@ -36,7 +47,9 @@ export default function Post() {
   const [manualLat, setManualLat] = useState('')
   const [manualLon, setManualLon] = useState('')
   const [proofVideo, setProofVideo] = useState<File | undefined>()
-  const [proofPhotos, setProofPhotos] = useState<File[]>([])
+  const [proofPhotos, setProofPhotos] = useState<File[]>(() =>
+    initialPhotoRef.current ? [initialPhotoRef.current] : []
+  )
   const [checking, setChecking] = useState(false)
   const [availability, setAvailability] = useState<AvailabilityState>('unknown')
   const [blockReason, setBlockReason] = useState<string | undefined>()
@@ -45,6 +58,13 @@ export default function Post() {
   const [uploaderKey, setUploaderKey] = useState(0)
 
   const { toast, showToast, dismissToast } = useToast()
+
+  useEffect(() => {
+    if (!initialPhotoRef.current) return
+
+    showToast('success', 'Photo captured. Add a reel, GPS, and details to finish.')
+    navigate('/post', { replace: true, state: null })
+  }, [navigate, showToast])
 
   const handleCaptureGPS = async () => {
     setCapturingLocation(true)
@@ -246,6 +266,11 @@ export default function Post() {
 
         <ProofUploader
           key={uploaderKey}
+          initial={
+            initialPhotoRef.current
+              ? { photos: [initialPhotoRef.current] }
+              : undefined
+          }
           onChange={(payload) => {
             setProofVideo(payload.video)
             setProofPhotos(payload.photos)
