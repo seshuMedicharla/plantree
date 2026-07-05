@@ -48,15 +48,20 @@ export default function BottomNav() {
                 <input
                   ref={postCameraInputRef}
                   type="file"
-                  accept="image/*"
+                  accept="image/*,video/*"
                   capture="environment"
                   className="hidden"
                   onChange={(event) => {
-                    const photo = event.target.files?.[0]
+                    const media = event.target.files?.[0]
                     event.target.value = ''
 
-                    if (photo) {
-                      navigate(item.to, { state: { initialPhoto: photo } })
+                    if (media) {
+                      const isVideo = media.type.startsWith('video/')
+                      navigate(item.to, {
+                        state: isVideo
+                          ? { initialVideo: media }
+                          : { initialPhoto: media },
+                      })
                       return
                     }
 

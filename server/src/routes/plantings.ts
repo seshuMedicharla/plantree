@@ -212,24 +212,10 @@ router.post("/plantings", async (request, response, next) => {
       return;
     }
 
-    if (!payload.hasVideo) {
+    if (!payload.media.some((item) => item.type === "photo" || item.type === "video")) {
       response
         .status(400)
-        .json({ ok: false, message: "Proof video is required" });
-      return;
-    }
-
-    if (!payload.media.some((item) => item.type === "video")) {
-      response
-        .status(400)
-        .json({ ok: false, message: "Proof reel file is required" });
-      return;
-    }
-
-    if (!payload.media.some((item) => item.type === "photo")) {
-      response
-        .status(400)
-        .json({ ok: false, message: "At least one plant photo is required" });
+        .json({ ok: false, message: "At least one photo or video is required" });
       return;
     }
 

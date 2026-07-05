@@ -21,6 +21,7 @@ type LocationState = {
 type AvailabilityState = 'unknown' | 'available' | 'blocked'
 type PostRouteState = {
   initialPhoto?: File
+  initialVideo?: File
 }
 
 function fileToDataUrl(file: File) {
@@ -40,13 +41,20 @@ export default function Post() {
       ? (routeLocation.state as PostRouteState).initialPhoto
       : undefined
   )
+  const initialVideoRef = useRef<File | undefined>(
+    (routeLocation.state as PostRouteState | null)?.initialVideo instanceof File
+      ? (routeLocation.state as PostRouteState).initialVideo
+      : undefined
+  )
   const [treeCount, setTreeCount] = useState('1')
   const [species, setSpecies] = useState('')
   const [caption, setCaption] = useState('')
   const [location, setLocation] = useState<LocationState | null>(null)
   const [manualLat, setManualLat] = useState('')
   const [manualLon, setManualLon] = useState('')
-  const [proofVideo, setProofVideo] = useState<File | undefined>()
+  const [proofVideo, setProofVideo] = useState<File | undefined>(
+    initialVideoRef.current
+  )
   const [proofPhotos, setProofPhotos] = useState<File[]>(() =>
     initialPhotoRef.current ? [initialPhotoRef.current] : []
   )
@@ -60,9 +68,14 @@ export default function Post() {
   const { toast, showToast, dismissToast } = useToast()
 
   useEffect(() => {
-    if (!initialPhotoRef.current) return
+    if (!initialPhotoRef.current && !initialVideoRef.current) return
 
-    showToast('success', 'Photo captured. Add a reel, GPS, and details to finish.')
+    showToast(
+      'success',
+      initialVideoRef.current
+        ? 'Video captured. Add GPS and details to finish.'
+        : 'Photo captured. Add GPS and details to finish.'
+    )
     navigate('/post', { replace: true, state: null })
   }, [navigate, showToast])
 
@@ -226,7 +239,8 @@ export default function Post() {
   }
 
   const canCheckSpot = Boolean(location)
-  const canSubmit = Boolean(location && proofVideo && proofPhotos.length > 0)
+  const hasMedia = Boolean(proofVideo || proofPhotos.length > 0)
+  const canSubmit = Boolean(location && hasMedia)
   const stepClass = (ready: boolean) =>
     ready
       ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
@@ -244,12 +258,12 @@ export default function Post() {
             </p>
             <h2 className="mt-1 text-xl font-bold text-slate-900">New planting post</h2>
             <p className="mt-1 text-sm text-slate-500">
-              Capture media first, then add details and submit for verification.
+              Capture a photo or video first, then add details and submit.
             </p>
           </div>
 
           <div className="grid grid-cols-3 gap-2">
-            <div className={`rounded-2xl border px-3 py-2 ${stepClass(Boolean(proofVideo && proofPhotos.length > 0))}`}>
+            <div className={`rounded-2xl border px-3 py-2 ${stepClass(hasMedia)}`}>
               <CheckCircle2 size={17} />
               <p className="mt-1 text-xs font-semibold">Media</p>
             </div>
@@ -267,8 +281,11 @@ export default function Post() {
         <ProofUploader
           key={uploaderKey}
           initial={
-            initialPhotoRef.current
-              ? { photos: [initialPhotoRef.current] }
+            initialPhotoRef.current || initialVideoRef.current
+              ? {
+                  photos: initialPhotoRef.current ? [initialPhotoRef.current] : [],
+                  video: initialVideoRef.current,
+                }
               : undefined
           }
           onChange={(payload) => {
@@ -383,7 +400,7 @@ export default function Post() {
           <div className="space-y-3">
             <p className="text-xs text-slate-600">
               Trees: {Math.max(1, Number.parseInt(treeCount || '1', 10))} • GPS:{' '}
-              {location ? 'ok' : 'missing'} • Reel: {proofVideo ? 'ok' : 'missing'} • Photos:{' '}
+              {location ? 'ok' : 'missing'} • Video: {proofVideo ? 'ok' : 'optional'} • Photos:{' '}
               {proofPhotos.length} • Spot: {availability}
             </p>
 
@@ -392,7 +409,7 @@ export default function Post() {
             </Button>
 
             {!canSubmit ? (
-              <Pill text="GPS, reel, and at least one photo are required" />
+              <Pill text="GPS and at least one photo or video are required" />
             ) : null}
           </div>
         </Card>

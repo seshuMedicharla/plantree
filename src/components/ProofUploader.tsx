@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Camera, ImagePlus, Play, Plus, Trash2, Video } from 'lucide-react'
+import { Camera, ImagePlus, Play, Plus, Trash2 } from 'lucide-react'
 import Card from './Card'
 import Pill from './Pill'
 
@@ -39,7 +39,7 @@ export default function ProofUploader({
   const [photoUrls, setPhotoUrls] = useState<string[]>([])
 
   const videoInputRef = useRef<HTMLInputElement | null>(null)
-  const videoCameraInputRef = useRef<HTMLInputElement | null>(null)
+  const mediaCameraInputRef = useRef<HTMLInputElement | null>(null)
   const photoInputRef = useRef<HTMLInputElement | null>(null)
   const photoCameraInputRef = useRef<HTMLInputElement | null>(null)
 
@@ -84,6 +84,22 @@ export default function ProofUploader({
     event.target.value = ''
   }
 
+  const handlePickCameraMedia = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const picked = event.target.files?.[0]
+    if (!picked) return
+
+    if (picked.type.startsWith('video/')) {
+      setVideo(picked)
+    } else {
+      setPhotos((prev) => {
+        if (prev.length >= 3) return prev
+        return [...prev, picked]
+      })
+    }
+
+    event.target.value = ''
+  }
+
   const handlePickPhotos = (event: React.ChangeEvent<HTMLInputElement>) => {
     const picked = Array.from(event.target.files ?? [])
     if (picked.length === 0) return
@@ -124,12 +140,12 @@ export default function ProofUploader({
         <section className="space-y-3">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-sm font-semibold text-slate-800">Reel video</p>
+              <p className="text-sm font-semibold text-slate-800">Photo or reel</p>
               <p className="mt-0.5 text-xs text-slate-500">
-                Record a short clip or select one from your gallery.
+                Use the camera like a social post, or pick from gallery.
               </p>
             </div>
-            <Pill text={video ? 'Ready' : 'Required'} className={video ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-amber-200 bg-amber-50 text-amber-700'} />
+            <Pill text={video || photos.length > 0 ? 'Ready' : 'Required'} className={video || photos.length > 0 ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-amber-200 bg-amber-50 text-amber-700'} />
           </div>
 
           <input
@@ -140,22 +156,30 @@ export default function ProofUploader({
             onChange={handlePickVideo}
           />
           <input
-            ref={videoCameraInputRef}
+            ref={mediaCameraInputRef}
             type="file"
-            accept="video/*"
+            accept="image/*,video/*"
             capture="environment"
             className="hidden"
-            onChange={handlePickVideo}
+            onChange={handlePickCameraMedia}
           />
 
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-3 gap-2">
             <button
               type="button"
-              onClick={() => videoCameraInputRef.current?.click()}
+              onClick={() => mediaCameraInputRef.current?.click()}
               className="flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-3 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700"
             >
-              <Video size={18} />
-              Record Reel
+              <Camera size={18} />
+              Camera
+            </button>
+            <button
+              type="button"
+              onClick={() => photoInputRef.current?.click()}
+              className="flex min-h-14 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
+            >
+              <ImagePlus size={18} />
+              Photos
             </button>
             <button
               type="button"
@@ -163,12 +187,12 @@ export default function ProofUploader({
               className="flex min-h-14 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
             >
               <Play size={18} />
-              Gallery
+              Video
             </button>
           </div>
 
-          {!video && required ? (
-            <p className="text-xs text-amber-700">Reel required for verification.</p>
+          {!video && photos.length === 0 && required ? (
+            <p className="text-xs text-amber-700">Add at least one photo or video.</p>
           ) : null}
 
           {video && videoUrl ? (
@@ -207,7 +231,7 @@ export default function ProofUploader({
         <section className="space-y-3">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-semibold text-slate-800">Plant photos</p>
+              <p className="text-sm font-semibold text-slate-800">More plant photos</p>
               <p className="mt-0.5 text-xs text-slate-500">
                 Capture live photos or choose existing images.
               </p>
