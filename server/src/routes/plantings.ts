@@ -36,6 +36,7 @@ const checkSpotSchema = z.object({
 const submitPlantingSchema = z.object({
   count: z.number().int().positive(),
   species: z.string().trim().max(80).optional().default("Unknown"),
+  caption: z.string().trim().max(240).optional().default(""),
   lat: z.number().min(-90).max(90),
   lon: z.number().min(-180).max(180),
   accuracy: z.number().nonnegative(),
@@ -277,7 +278,9 @@ router.post("/plantings", async (request, response, next) => {
       _id: randomUUID(),
       userId,
       plantingId,
-      caption: `Planted ${payload.count} ${payload.species} tree(s).`,
+      caption:
+        payload.caption ||
+        `Planted ${payload.count} ${payload.species} tree(s).`,
       likesCount: 0,
       commentsCount: 0,
       savedCount: 0,

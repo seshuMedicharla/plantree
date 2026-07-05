@@ -15,6 +15,7 @@ export type CheckSpotResponse = {
 export type SubmitPlantingRequest = {
   count: number
   species: string
+  caption?: string
   lat: number
   lon: number
   accuracy: number

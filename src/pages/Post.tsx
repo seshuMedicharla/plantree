@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { CheckCircle2, MapPin, PenLine, Trees } from 'lucide-react'
 import Button from '../components/Button'
 import Card from '../components/Card'
 import Input from '../components/Input'
@@ -30,6 +31,7 @@ function fileToDataUrl(file: File) {
 export default function Post() {
   const [treeCount, setTreeCount] = useState('1')
   const [species, setSpecies] = useState('')
+  const [caption, setCaption] = useState('')
   const [location, setLocation] = useState<LocationState | null>(null)
   const [manualLat, setManualLat] = useState('')
   const [manualLon, setManualLon] = useState('')
@@ -170,6 +172,7 @@ export default function Post() {
       const result = await submitPlanting({
         count: Math.max(1, Number.parseInt(treeCount || '1', 10)),
         species,
+        caption,
         lat: location.lat,
         lon: location.lon,
         accuracy: location.accuracy,
@@ -182,6 +185,7 @@ export default function Post() {
         showToast('success', `Posted successfully (${result.id}).`)
         setTreeCount('1')
         setSpecies('')
+        setCaption('')
         setLocation(null)
         setProofVideo(undefined)
         setProofPhotos([])
@@ -203,24 +207,67 @@ export default function Post() {
 
   const canCheckSpot = Boolean(location)
   const canSubmit = Boolean(location && proofVideo && proofPhotos.length > 0)
+  const stepClass = (ready: boolean) =>
+    ready
+      ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+      : 'border-slate-200 bg-white text-slate-500'
 
   return (
     <section className="space-y-4">
       <Toast toast={toast} onDismiss={dismissToast} />
 
       <div className="space-y-4 px-4 pb-4">
-        <Card>
-          <h2 className="mb-3 text-base font-semibold text-slate-900">Create Post</h2>
+        <Card className="space-y-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">
+              Create
+            </p>
+            <h2 className="mt-1 text-xl font-bold text-slate-900">New planting post</h2>
+            <p className="mt-1 text-sm text-slate-500">
+              Capture media first, then add details and submit for verification.
+            </p>
+          </div>
 
+          <div className="grid grid-cols-3 gap-2">
+            <div className={`rounded-2xl border px-3 py-2 ${stepClass(Boolean(proofVideo && proofPhotos.length > 0))}`}>
+              <CheckCircle2 size={17} />
+              <p className="mt-1 text-xs font-semibold">Media</p>
+            </div>
+            <div className={`rounded-2xl border px-3 py-2 ${stepClass(Boolean(location))}`}>
+              <MapPin size={17} />
+              <p className="mt-1 text-xs font-semibold">GPS</p>
+            </div>
+            <div className={`rounded-2xl border px-3 py-2 ${stepClass(availability === 'available')}`}>
+              <Trees size={17} />
+              <p className="mt-1 text-xs font-semibold">Radius</p>
+            </div>
+          </div>
+        </Card>
+
+        <ProofUploader
+          key={uploaderKey}
+          onChange={(payload) => {
+            setProofVideo(payload.video)
+            setProofPhotos(payload.photos)
+            setAvailability('unknown')
+            setBlockReason(undefined)
+          }}
+        />
+
+        <Card>
           <div className="space-y-4">
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-slate-700">Planting Details</p>
+            <div className="flex items-center gap-2 text-slate-900">
+              <PenLine size={18} className="text-emerald-600" />
+              <h3 className="text-base font-semibold">Post details</h3>
+            </div>
+
+            <div className="grid grid-cols-[0.7fr_1.3fr] gap-2">
               <Input
                 type="number"
                 min={1}
                 value={treeCount}
                 onChange={(event) => setTreeCount(event.target.value)}
-                placeholder="Tree count"
+                placeholder="Trees"
               />
               <Input
                 type="text"
@@ -229,6 +276,15 @@ export default function Post() {
                 placeholder="Species"
               />
             </div>
+
+            <textarea
+              value={caption}
+              onChange={(event) => setCaption(event.target.value)}
+              maxLength={240}
+              placeholder="Write a caption..."
+              className="min-h-24 w-full resize-none rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 placeholder:text-slate-400"
+            />
+            <p className="text-right text-xs text-slate-400">{caption.length}/240</p>
 
             <div className="space-y-2">
               <p className="text-sm font-medium text-slate-700">Capture GPS</p>
@@ -275,16 +331,6 @@ export default function Post() {
             </div>
           </div>
         </Card>
-
-        <ProofUploader
-          key={uploaderKey}
-          onChange={(payload) => {
-            setProofVideo(payload.video)
-            setProofPhotos(payload.photos)
-            setAvailability('unknown')
-            setBlockReason(undefined)
-          }}
-        />
 
         {canCheckSpot ? (
           <Card>

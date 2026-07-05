@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import Button from './Button'
+import { Camera, ImagePlus, Play, Plus, Trash2, Video } from 'lucide-react'
 import Card from './Card'
 import Pill from './Pill'
 
@@ -39,7 +39,9 @@ export default function ProofUploader({
   const [photoUrls, setPhotoUrls] = useState<string[]>([])
 
   const videoInputRef = useRef<HTMLInputElement | null>(null)
+  const videoCameraInputRef = useRef<HTMLInputElement | null>(null)
   const photoInputRef = useRef<HTMLInputElement | null>(null)
+  const photoCameraInputRef = useRef<HTMLInputElement | null>(null)
 
   useEffect(() => {
     onChange({ video, photos })
@@ -79,6 +81,7 @@ export default function ProofUploader({
     const picked = event.target.files?.[0]
     if (!picked) return
     setVideo(picked)
+    event.target.value = ''
   }
 
   const handlePickPhotos = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -89,6 +92,7 @@ export default function ProofUploader({
       const room = Math.max(0, 3 - prev.length)
       return [...prev, ...picked.slice(0, room)]
     })
+    event.target.value = ''
   }
 
   const removeVideo = () => {
@@ -106,14 +110,27 @@ export default function ProofUploader({
   }
 
   return (
-    <Card>
-      <h3 className="text-sm font-semibold text-slate-900">Proof</h3>
+    <Card className="overflow-hidden p-0">
+      <div className="border-b border-slate-100 bg-slate-50 px-4 py-3">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">
+          New Planting Post
+        </p>
+        <h3 className="mt-1 text-base font-semibold text-slate-900">
+          Capture proof
+        </h3>
+      </div>
 
-      <div className="mt-4 space-y-4">
-        <section className="space-y-2">
-          <p className="text-sm font-medium text-slate-700">
-            Upload Reel (15-60s recommended)
-          </p>
+      <div className="space-y-5 p-4">
+        <section className="space-y-3">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold text-slate-800">Reel video</p>
+              <p className="mt-0.5 text-xs text-slate-500">
+                Record a short clip or select one from your gallery.
+              </p>
+            </div>
+            <Pill text={video ? 'Ready' : 'Required'} className={video ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-amber-200 bg-amber-50 text-amber-700'} />
+          </div>
 
           <input
             ref={videoInputRef}
@@ -122,30 +139,49 @@ export default function ProofUploader({
             className="hidden"
             onChange={handlePickVideo}
           />
+          <input
+            ref={videoCameraInputRef}
+            type="file"
+            accept="video/*"
+            capture="environment"
+            className="hidden"
+            onChange={handlePickVideo}
+          />
 
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={() => videoInputRef.current?.click()}
-          >
-            {video ? 'Replace Reel' : 'Choose Reel'}
-          </Button>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => videoCameraInputRef.current?.click()}
+              className="flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-3 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700"
+            >
+              <Video size={18} />
+              Record Reel
+            </button>
+            <button
+              type="button"
+              onClick={() => videoInputRef.current?.click()}
+              className="flex min-h-14 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
+            >
+              <Play size={18} />
+              Gallery
+            </button>
+          </div>
 
           {!video && required ? (
-            <p className="text-xs text-amber-700">Reel required for verification</p>
+            <p className="text-xs text-amber-700">Reel required for verification.</p>
           ) : null}
 
           {video && videoUrl ? (
-            <div className="space-y-2 rounded-2xl border border-slate-200 bg-slate-50 p-3">
+            <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50 p-3">
               <video
                 controls
-                className="w-full rounded-xl"
+                className="aspect-[4/5] w-full rounded-xl bg-black object-cover"
                 src={videoUrl}
                 onLoadedMetadata={(event) =>
                   setVideoDuration(event.currentTarget.duration)
                 }
               />
-              <p className="text-xs text-slate-700">{video.name}</p>
+              <p className="truncate text-xs font-medium text-slate-700">{video.name}</p>
               <div className="flex flex-wrap gap-2">
                 <Pill text={formatBytes(video.size)} />
                 <Pill text={`Duration ${formatDuration(videoDuration ?? 0)}`} />
@@ -156,17 +192,27 @@ export default function ProofUploader({
                   className="border-amber-200 bg-amber-50 text-amber-700"
                 />
               ) : null}
-              <Button type="button" variant="ghost" onClick={removeVideo}>
+              <button
+                type="button"
+                onClick={removeVideo}
+                className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-2xl text-sm font-semibold text-rose-600 transition hover:bg-rose-50"
+              >
+                <Trash2 size={16} />
                 Remove Reel
-              </Button>
+              </button>
             </div>
           ) : null}
         </section>
 
-        <section className="space-y-2">
+        <section className="space-y-3">
           <div className="flex items-center justify-between">
-            <p className="text-sm font-medium text-slate-700">Upload Photos (up to 3)</p>
-            <Pill text={`${photos.length}/3`} />
+            <div>
+              <p className="text-sm font-semibold text-slate-800">Plant photos</p>
+              <p className="mt-0.5 text-xs text-slate-500">
+                Capture live photos or choose existing images.
+              </p>
+            </div>
+            <Pill text={`${photos.length}/3`} className={photos.length > 0 ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : ''} />
           </div>
 
           <input
@@ -177,15 +223,35 @@ export default function ProofUploader({
             className="hidden"
             onChange={handlePickPhotos}
           />
+          <input
+            ref={photoCameraInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="hidden"
+            onChange={handlePickPhotos}
+          />
 
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={() => photoInputRef.current?.click()}
-            disabled={photos.length >= 3}
-          >
-            Add Photos
-          </Button>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => photoCameraInputRef.current?.click()}
+              disabled={photos.length >= 3}
+              className="flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-3 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Camera size={18} />
+              Capture Photo
+            </button>
+            <button
+              type="button"
+              onClick={() => photoInputRef.current?.click()}
+              disabled={photos.length >= 3}
+              className="flex min-h-14 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <ImagePlus size={18} />
+              Gallery
+            </button>
+          </div>
 
           {photos.length > 0 ? (
             <div className="grid grid-cols-3 gap-2">
@@ -195,14 +261,15 @@ export default function ProofUploader({
                     <img
                       src={photoUrls[index]}
                       alt={file.name}
-                      className="h-20 w-full object-cover"
+                      className="aspect-square w-full object-cover"
                     />
                     <button
                       type="button"
                       onClick={() => removePhoto(index)}
-                      className="absolute right-1 top-1 rounded-full bg-black/70 px-2 py-0.5 text-[10px] font-medium text-white"
+                      className="absolute right-1 top-1 flex h-7 w-7 items-center justify-center rounded-full bg-black/70 text-white"
+                      aria-label={`Remove ${file.name}`}
                     >
-                      Remove
+                      <Trash2 size={13} />
                     </button>
                   </div>
                   <p className="truncate text-[11px] text-slate-600" title={file.name}>
@@ -210,6 +277,16 @@ export default function ProofUploader({
                   </p>
                 </div>
               ))}
+              {photos.length < 3 ? (
+                <button
+                  type="button"
+                  onClick={() => photoCameraInputRef.current?.click()}
+                  className="flex aspect-square items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 text-slate-500"
+                  aria-label="Add another photo"
+                >
+                  <Plus size={20} />
+                </button>
+              ) : null}
             </div>
           ) : (
             <p className="text-xs text-slate-500">
